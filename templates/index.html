@@ -191,7 +191,6 @@
     <!-- Macro for rendering an active cell -->
     {% macro active_cell(task, current_stage) %}
     <div class="cell-content">
-        <!-- Using data attributes avoids syntax errors in VS Code -->
         <textarea 
             data-id="{{ task.id }}"
             placeholder="Task details..."
@@ -216,7 +215,8 @@
     <h1>Academic Kanban</h1>
 
     <div class="controls">
-        <button class="add-btn" onclick="addNewRow('')">+ Add New Course Group</button>
+        <!-- Pass (null, true) to signal a completely NEW course group -->
+        <button class="add-btn" onclick="addNewRow(null, true)">+ Add New Course Group</button>
     </div>
 
     <table>
@@ -242,10 +242,6 @@
                     {% if loop.first %}
                     <td rowspan="{{ row_span }}">
                         <div class="cell-content" style="justify-content: flex-start;">
-                            <!-- 
-                                We pass data via data-attributes to keep the HTML clean and valid for linters.
-                                Jinja automatically escapes quotes in attributes, making this safer too.
-                            -->
                             <textarea 
                                 class="course-input" 
                                 placeholder="Course Name..."
@@ -253,8 +249,8 @@
                                 onblur="updateCourseGroup(this.value, JSON.parse(this.dataset.ids))">{{ task.course }}</textarea>
                             
                             <div class="course-btn-group">
-                                <!-- data-course attribute handles quotes safely -->
-                                <button class="mini-add-btn" data-course="{{ task.course }}" onclick="addNewRow(this.dataset.course)">+ Add Task</button>
+                                <!-- Pass (this.dataset.course, false) to add to THIS group -->
+                                <button class="mini-add-btn" data-course="{{ task.course }}" onclick="addNewRow(this.dataset.course, false)">+ Add Task</button>
                                 
                                 <button class="delete-course-btn" data-ids="[{{ tasks_in_course|map(attribute='id')|join(', ') }}]" onclick="deleteCourseGroup(JSON.parse(this.dataset.ids))">Delete Course</button>
                             </div>
@@ -301,13 +297,18 @@
             window.location.reload();
         }
 
-        // Add a new row - Now accepts optional course name
-        async function addNewRow(courseName = '') {
+        // Add a new row 
+        // 1. If adding to existing group: addNewRow('Math', false)
+        // 2. If creating new group: addNewRow(null, true)
+        async function addNewRow(courseName, isNewGroup = false) {
             try {
+                // If it is a new group, we send a flag so backend generates unique name
+                const payload = isNewGroup ? { new_group: true } : { course: courseName };
+
                 const res = await fetch('/add', { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ course: courseName })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
                 if (data.success) refresh();
@@ -378,7 +379,6 @@
         async function deleteCourseGroup(taskIds) {
             if(!confirm("Are you sure you want to delete this course and ALL its tasks?")) return;
             try {
-                // We reuse the delete endpoint for each task ID in the group
                 const deletions = taskIds.map(id => 
                     fetch(`/delete/${id}`, { method: 'POST' })
                 );

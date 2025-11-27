@@ -46,15 +46,30 @@ def index():
 
 @app.route('/add', methods=['POST'])
 def add_task():
-    """Adds a new row. Accepts optional 'course' to add to specific group."""
+    """Adds a new row. Accepts optional 'course' OR 'new_group' flag."""
     db = get_db()
     cursor = db.cursor()
     
-    # Check if a specific course name was passed
     data = request.get_json(silent=True) or {}
-    course_name = data.get('course', '')
     
-    # Defaults: Specified course (or empty), Empty content, Status 'todo'
+    # Logic: If 'new_group' is True, generate a unique name.
+    # Otherwise, use the provided 'course' name (which adds to an existing group).
+    if data.get('new_group'):
+        base_name = "Course"
+        counter = 1
+        course_name = f"{base_name} {counter}"
+        
+        # Check DB to find the next available number (e.g., Course 1, Course 2...)
+        while True:
+            cursor.execute('SELECT 1 FROM tasks WHERE course = ? LIMIT 1', (course_name,))
+            if not cursor.fetchone():
+                break
+            counter += 1
+            course_name = f"{base_name} {counter}"
+    else:
+        course_name = data.get('course', '')
+    
+    # Insert with the determined name
     cursor.execute('INSERT INTO tasks (course, content, status) VALUES (?, ?, ?)', 
                    (course_name, '', 'todo'))
     db.commit()
@@ -121,4 +136,4 @@ def delete_task(task_id):
 
 if __name__ == '__main__':
     init_db() # Ensure DB exists on startup
-    app.run(debug=True)
+    app.run(debug=True, host="127.0.0.2")
