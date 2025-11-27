@@ -1,0 +1,32 @@
+--- Virtual Environment ---
+
+These folders contain thousands of library files.
+
+We don't upload them; we use requirements.txt to recreate them instead.
+
+venv/
+env/
+.env
+
+--- Python Internals ---
+
+These are temporary compiled files Python creates to run faster.
+
+pycache/
+*.py[cod]
+
+--- Database ---
+
+IMPORTANT: Keeps your school data local and private.
+
+*.db
+
+--- Editor Settings ---
+
+VS Code settings (optional, but prevents overriding other people's settings)
+
+.vscode/
+
+--- OS generated files ---
+
+.DS_Store
