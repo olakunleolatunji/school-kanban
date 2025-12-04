@@ -65,6 +65,10 @@
             text-transform: uppercase;
             border: 1px solid #444;
             width: 18%;
+            /* STICKY HEADER SETTINGS */
+            position: sticky;
+            top: 0;
+            z-index: 10; /* Ensures header sits on top of scrolling content */
         }
 
         td {
@@ -191,6 +195,7 @@
     <!-- Macro for rendering an active cell -->
     {% macro active_cell(task, current_stage) %}
     <div class="cell-content">
+        <!-- Using data attributes avoids syntax errors in VS Code -->
         <textarea 
             data-id="{{ task.id }}"
             placeholder="Task details..."
